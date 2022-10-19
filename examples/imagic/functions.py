@@ -19,11 +19,13 @@ def optimize_text_embeddings(
         noise = torch.randn_like(init_latent)
         t_enc = torch.randint(1000, (1,), device=torch_device)
         # predict the residual
-        with torch.no_grad():
-            noise_pred = unet(init_latent, t_enc, encoder_hidden_states=emb).sample
-        latents = scheduler.step(noise_pred, t_enc, noise).prev_sample
+        z = scheduler.add_noise(init_latent.detach(), noise, t_enc)
+        noise_pred = unet(z, t_enc, encoder_hidden_states=emb).sample
 
-        loss = criteria(latents, noise)
+        # noise_pred = scheduler.step(noise_pred, t_enc, noise).prev_sample
+        # latents = scheduler.step(noise_pred, t_enc, noise).prev_sample
+
+        loss = criteria(noise_pred, noise)
         loss.backward()
         pbar.set_postfix({"loss": loss.item()})
         history.append(loss.item())
@@ -45,10 +47,10 @@ def finetune(emb, init_latent, unet, scheduler, torch_device="cpu"):
 
         noise = torch.randn_like(init_latent)
         t_enc = torch.randint(range(len(scheduler.timesteps)), (1,), device=torch_device)
+        z = scheduler.add_noise(init_latent.detach(), noise, t_enc)
         noise_pred = unet(init_latent, t_enc, encoder_hidden_states=emb).sample
-        latents = scheduler.step(noise_pred, t_enc, noise).prev_sample
 
-        loss = criteria(latents, noise)
+        loss = criteria(noise_pred, noise)
         loss.backward()
         pbar.set_postfix({"loss": loss.item()})
         history.append(loss.item())

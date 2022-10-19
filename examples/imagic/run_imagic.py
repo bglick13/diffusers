@@ -1,4 +1,3 @@
-from re import X
 import torch
 from PIL import Image
 from torchvision import transforms
@@ -21,8 +20,8 @@ torch_device = "cpu"
 scale = 3
 h = 512
 w = 512
-ddim_steps = 45
 ddim_eta = 0.0
+num_inference_steps = 100
 torch.manual_seed(0)
 to_tensor = transforms.ToTensor()
 
@@ -41,6 +40,7 @@ text_encoder = CLIPTextModel.from_pretrained("openai/clip-vit-large-patch14")
 # 3. The UNet model for generating the latents.
 unet = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet")
 scheduler = DDIMScheduler()
+scheduler.set_timesteps(num_inference_steps)
 vae = vae.to(torch_device)
 text_encoder = text_encoder.to(torch_device)
 unet = unet.to(torch_device)
